@@ -1,0 +1,10 @@
+[package]
+name = "pino"
+version = "0.1.1"
+edition = "2021"
+
+[dependencies]
+fltk = "^1.5"
+toml = "0.5.2"
+serde = { version = "1.0", features = ["derive"] }
+argh = "0.1.13"
