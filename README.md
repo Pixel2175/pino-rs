@@ -19,7 +19,7 @@ Pino is a fully customizable notification tool rewritten in Rust. It allows you 
 ## Features
 
 - **Customizable Notifications**: Set titles, messages, delay, and fonts.
-- **Dynamic Theming with Pywal**: Automatically matches the notification theme to your wallpaper.
+- **Dynamic Theming with walrs(or pywal)**: Automatically matches the notification theme to your wallpaper.
 - **Configurable Settings**: Adjust themes, screen placement, fonts, and more via a TOML config file.
 - **Script Integration**: Automate notifications using scripts in any language.
 
@@ -58,7 +58,7 @@ sudo cp target/release/pino /usr/bin/
 Pino requires the following dependencies:
 
 - Rust (for building from source)
-- Pywal (optional) for dynamic theming
+- Walrs | pywal (optional) for dynamic theming
 
 ---
 

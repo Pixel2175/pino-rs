@@ -12,9 +12,9 @@ pub fn get_config_dir() -> PathBuf {
     panic!("Could not determine config directory");
 }
 
-fn create_template() {
+fn create_template(app:&str) {
     let config = get_config_dir()
-        .join("wal")
+        .join(app)
         .join("templates")
         .join("colors-pino.toml");
 
@@ -107,14 +107,18 @@ pub fn pywal(
     message_color: String,
 ) ->(String,String,String,String) {
     let home = env::var("HOME").expect("Can't Find Home Dir");
-    let template_path = get_config_dir()
-        .join("wal")
-        .join("templates")
-        .join("colors-pino.toml");
 
-    if !template_path.exists() {
-        create_template();
+    if !get_config_dir().join("wal/templates/colors-pino.toml").exists(){
+        create_template("wal");
     }
+
+
+
+    if !get_config_dir().join("walrs/templates/colors-pino.toml").exists(){
+        create_template("walrs");
+    }
+
+
 
     Command::new("bash")
         .arg("-c")
