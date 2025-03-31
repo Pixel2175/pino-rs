@@ -30,7 +30,7 @@ Pino is a fully customizable notification tool rewritten in Rust. It allows you 
 ### Arch Linux
 
 ```bash
-sudo pacman -S rust
+yay -S pino-rs
 ```
 
 ### Debian-based Distros
@@ -42,13 +42,7 @@ sudo apt install rustc cargo
 Then, build the project:
 
 ```bash
-cargo build --release
-```
-
-Copy the binary to `/usr/bin`:
-
-```bash
-sudo cp target/release/pino /usr/bin/
+make install clean
 ```
 
 ---
@@ -58,7 +52,7 @@ sudo cp target/release/pino /usr/bin/
 Pino requires the following dependencies:
 
 - Rust (for building from source)
-- Walrs | pywal (optional) for dynamic theming
+- Walrs || pywal (optional) for dynamic theming
 
 ---
 
@@ -129,7 +123,7 @@ x = 10
 y = 45
 
 [pywal]
-pywal = true
+pywal = false
 background_color  = "bg"
 border_color      = "color1"
 title_color       = "fg"
@@ -143,6 +137,6 @@ sound = false
 
 ## Hardware Usage
 
-Pino is lightweight and efficient. The graphical notification window typically uses approximately **18-25MB of RAM** when active, ensuring minimal system resource consumption.
+Pino is lightweight and efficient. The graphical notification window typically uses approximately **15-20MB of RAM** when active, ensuring minimal system resource consumption.
 
 
