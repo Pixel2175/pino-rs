@@ -7,7 +7,7 @@ install: build
 	sudo install -m755 target/release/pino /bin/pino
 
 uninstall:
-	sudo rm -f /bin/walrs
+	sudo rm -f /bin/pino
 	sudo rm -rf ~/.config/pino
 
 clean:
