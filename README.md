@@ -30,7 +30,7 @@ Pino is a fully customizable notification tool rewritten in Rust. It allows you 
 ### Arch Linux
 
 ```bash
-yay -S pino-rs
+sudo pacman -S rustup
 ```
 
 ### Debian-based Distros
