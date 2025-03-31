@@ -59,7 +59,7 @@ x = 10
 y = 45
 
 [pywal]
-pywal = true
+pywal = false
 
 # You can choose colors from colors[0-15] or use these values: \"bg\", \"fg\"
 # Check ~/.cache/wal/colors-pino.toml file
