@@ -119,13 +119,6 @@ pub fn pywal(
     }
 
 
-
-    Command::new("bash")
-        .arg("-c")
-        .arg("wal -R")
-        .output()
-        .expect("Can't Reload Colors");
-
     let cache_colors = PathBuf::from(home)
         .join(".cache")
         .join("wal")
