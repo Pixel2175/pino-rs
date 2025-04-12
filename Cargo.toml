@@ -5,6 +5,6 @@ edition = "2024"
 
 [dependencies]
 fltk = "^1.5"
-toml = "0.5.2"
+toml = "0.5.11"
 serde = { version = "1.0", features = ["derive"] }
 argh = "0.1.13"

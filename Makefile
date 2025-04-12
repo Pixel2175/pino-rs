@@ -1,7 +1,7 @@
 all: build
 
 build:
-	cargo build --release
+	CMAKE_POLICY_VERSION_MINIMUM=3.5 cargo build --release 
 
 install: build
 	sudo install -m755 target/release/pino /bin/pino
