@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use std::fs;
-use std::{env, fs::OpenOptions, io::Write, path::PathBuf, process::Command};
+use std::{env, fs::OpenOptions, io::Write, path::PathBuf};
 
 pub fn get_config_dir() -> PathBuf {
     if let Ok(xdg_config) = env::var("XDG_CONFIG_HOME") {
@@ -125,10 +125,10 @@ pub fn pywal(
         .join("colors-pino.toml");
     let content = fs::read_to_string(&cache_colors).expect("Can't Read Colors File!!!");
     let colors: Pywal = toml::from_str(&content).expect("Invalid TOML Format!!!");
-    return (
+     (
         get_color(&colors, background_color.as_str()).to_string(),
         get_color(&colors, border_color.as_str()).to_string(),
         get_color(&colors, title_color.as_str()).to_string(),
         get_color(&colors, message_color.as_str()).to_string(),
-    );
+    )
 }
