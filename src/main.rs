@@ -35,7 +35,7 @@ struct Arg {
     config:Option<String> ,
 
     
-    #[argh(option,short = 'v', description = "set a custom configuration file")]
+    #[argh(switch,short = 'v', description = "set a custom configuration file")]
     version:Option<String> ,
 }
 
