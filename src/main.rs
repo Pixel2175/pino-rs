@@ -36,7 +36,7 @@ struct Arg {
 
     
     #[argh(switch,short = 'v', description = "set a custom configuration file")]
-    version:Option<String> ,
+    version:bool ,
 }
 
 
@@ -107,7 +107,7 @@ fn main() {
     let config_folder = colors::get_config_dir();
     let args:Arg = argh::from_env();
 
-    if args.version.is_some() {
+    if args.version {
         println!("v1.1.0");
         return ;
     }
