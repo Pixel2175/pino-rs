@@ -7,7 +7,7 @@ pub fn generate_config(config_path: PathBuf){
         .join("config.toml");
 
     create_dir_all(config.parent().unwrap())
-    .expect("Failed to create directories for template");
+        .expect("Failed to create directories for template");
     println!("Creating config file at: {}", config.display());
     let mut template = OpenOptions::new()
         .write(true)
@@ -19,30 +19,27 @@ pub fn generate_config(config_path: PathBuf){
     template
         .write_all(
             b"[screen]
-# Set the monitor using index
-monitor = 0
+monitor = 0 # Set the monitor using index
 
-# App placement on the screen
-horizontal = \"left\"
-vertical = \"top\"
-x = 25
-y = 55
 
-# Width and height of the app
-width = 300
-height = 100
+horizontal = \"left\"   #[right] |  [left]
+vertical = \"top\"      # [top]  | [bottom]
+x = 25                  # X access palcement
+y = 55                  # Y access palcement
 
-# Time to display the app (in seconds)
-delay = 5
+width = 300     # Width  of the app
+height = 100    # Height of the app
+
+delay = 5 # Time to display the app (in seconds)
 
 [frame]
-fg_color = \"#1a1e24\"
+fg_color = \"#1a1e24\" 
 
 # Run \"pino -f\" to show all available fonts
 font_family = \"Fira Code\"
 
 [border]
-weight = 4
+weight = 4 
 color = \"#ffffff\"
 radius = 8
 
@@ -69,5 +66,8 @@ title_color       = \"fg\"
 message_color     = \"color8\"
 
 ")
-.expect("Can't Create Template File !!!");
+        .expect("Can't Create Template File !!!");
 }
+
+
+

@@ -58,13 +58,13 @@ struct Config {
 
 #[derive(Debug, Deserialize)]
 struct Screen {
-    monitor: u8,
+    monitor: usize,
     horizontal: String,
     vertical: String,
-    x: i8,
-    y: i8,
-    width: u16,
-    height: u16,
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
     delay: i32,
 }
 #[derive(Debug, Deserialize)]
@@ -160,13 +160,13 @@ fn main() {
 
         // Get Screen Placment
         let screen = screen::get_size(
-            config.screen.monitor.into(),
+            config.screen.monitor,
             config.screen.vertical.as_str(),
             config.screen.horizontal.as_str(),
-            config.screen.x.into(),
-            config.screen.y.into(),
-            config.screen.width.into(),
-            config.screen.height.into(),
+            config.screen.x,
+            config.screen.y,
+            config.screen.width,
+            config.screen.height,
         );
 
         //UI
