@@ -7,21 +7,15 @@ use fltk::{
     window::Window,
 };
 use std::{
-    fs,
-    sync::mpsc,
-    thread,
-    time::{Duration, Instant},
+    fs::{self, metadata}, sync::mpsc, thread, time::{Duration, Instant}
 };
 
 
 pub fn print_fonts() {
     for font in get_font_names() {
-        println!("{}", font);
+        println!("{font}");
     }
 }
-
-
-
 
 pub fn ui(
     screen_info: (i32, i32, i32, i32),
@@ -32,7 +26,7 @@ pub fn ui(
     colors: (String, String, String, String),
 ) {
     let app = app::App::default();
-    
+
     let mut wind1 = Window::new(
         screen_info.0,
         screen_info.1,
@@ -42,7 +36,7 @@ pub fn ui(
     );
 
     wind1.set_color(Color::from_hex_str(colors.1.as_str()).unwrap());
-    
+
     let mut wind2 = Window::new(
         border.0 + border.1 / 2,
         border.0 + border.1 / 2,
@@ -85,24 +79,29 @@ pub fn ui(
     let (tx, rx) = mpsc::channel::<(String, String, Option<u64>)>();
     thread::spawn(move || {
         let filename = "/tmp/pino-check";
-        let mut current_title = String::new();
-        let mut current_message = String::new();
-        let mut current_delay = None;
+
+        let (mut current_title,mut current_message,mut current_delay) = (String::new(),String::new(),None);
+        let mut modified = metadata(filename).unwrap().modified().unwrap();
+        let mut batata = true; 
 
         loop {
-            let content = fs::read_to_string(filename).unwrap_or_default();
-            let lines: Vec<&str> = content.lines().collect();
-            let new_title = lines.first().unwrap_or(&"").to_string();
-            let new_message = lines.get(1).unwrap_or(&"").to_string();
-            let new_delay = lines.get(2).and_then(|s| s.parse::<u64>().ok());
-            if new_title != current_title || new_message != current_message || new_delay != current_delay {
-                tx.send((new_title.clone(), new_message.clone(), new_delay)).unwrap();
-                current_title = new_title;
-                current_message = new_message;
-                current_delay = new_delay;
-            }
-            
-            thread::sleep(Duration::from_millis(200));
+            if modified != metadata(filename).unwrap().modified().unwrap() || batata{
+                batata = false;
+                modified = metadata(filename).unwrap().modified().unwrap(); 
+
+                let content = fs::read_to_string(filename).unwrap();
+                let lines: Vec<&str> = content.lines().collect();
+                let new_title = lines.first().unwrap_or(&"").to_string();
+                let new_message = lines.get(1).unwrap_or(&"").to_string();
+                let new_delay = lines.get(2).and_then(|s| s.parse::<u64>().ok());
+                if new_title != current_title || new_message != current_message || new_delay != current_delay {
+                    tx.send((new_title.clone(), new_message.clone(), new_delay)).unwrap();
+                    current_title = new_title;
+                    current_message = new_message;
+                    current_delay = new_delay;
+                }
+            };
+            thread::sleep(Duration::from_millis(600));
         }
     });
 
@@ -136,3 +135,5 @@ pub fn ui(
         }
     }
 }
+
+

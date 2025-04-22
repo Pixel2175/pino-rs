@@ -34,7 +34,7 @@ struct Arg {
     #[argh(option,short = 'c', description = "set a custom configuration file")]
     config:Option<String> ,
 
-    
+
     #[argh(switch,short = 'v', description = "set a custom configuration file")]
     version:bool ,
 }
@@ -108,7 +108,7 @@ fn main() {
     let args:Arg = argh::from_env();
 
     if args.version {
-        println!("v1.1.0");
+        println!("v1.1.1");
         return ;
     }
 
@@ -189,3 +189,5 @@ fn main() {
         );
     }
 }
+
+

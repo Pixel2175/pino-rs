@@ -137,6 +137,6 @@ sound = false
 
 ## Hardware Usage
 
-Pino is lightweight and efficient. The graphical notification window typically uses approximately **15-20MB of RAM** when active, ensuring minimal system resource consumption.
+Pino is lightweight and efficient. The graphical notification window typically uses approximately **5-20MB of RAM** when active, ensuring minimal system resource consumption.
 
 
