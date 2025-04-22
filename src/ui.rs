@@ -25,7 +25,7 @@ pub fn ui(
     message: (i32,i32,i32),
     colors: (String, String, String, String),
 ) {
-    let app = app::App::default();
+    let app = app::App::default().load_system_fonts();
 
     let mut wind1 = Window::new(
         screen_info.0,
