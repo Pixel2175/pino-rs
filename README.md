@@ -27,20 +27,6 @@ Pino is a fully customizable notification tool rewritten in Rust. It allows you 
 
 ## Installation
 
-### Arch Linux
-
-```bash
-sudo pacman -S rustup
-```
-
-### Debian-based Distros
-
-```bash
-sudo apt install rustc cargo
-```
-
-Then, build the project:
-
 ```bash
 make install clean
 ```
