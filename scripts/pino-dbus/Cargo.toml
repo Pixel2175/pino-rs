@@ -1,0 +1,14 @@
+[package]
+edition = "2024"
+name = "pino-dbus"
+version = "0.1.1"
+description = "Dbus Server for Pino-rs (Pixel notificatoin)"
+repository = "https://github.com/pixel2175/pino-rs"
+
+[[bin]]
+name = "pino-dbus"
+path = "src/main.rs"
+
+[dependencies]
+dbus = "0.9.7"
+dbus-crossroads = "0.5.2"
