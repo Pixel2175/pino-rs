@@ -27,7 +27,6 @@ struct NotificationData {
 
 impl NotificationData {
     fn print(&self) {
-        // Send to pino app
         let summary = self.summary.clone();
         let body = self.body.clone();
 
@@ -52,7 +51,6 @@ impl NotificationData {
             println!("Actions: {}", self.actions.join(", "));
         }
 
-        // Print relevant hints if they exist
         if !self.hints.is_empty() {
             println!("Additional Info:");
             for (key, value) in &self.hints {
@@ -65,7 +63,6 @@ impl NotificationData {
     }
 }
 
-// Media player information structure
 #[derive(Debug)]
 struct MediaInfo {
     player: String,
@@ -112,7 +109,6 @@ impl MediaInfo {
     }
 }
 
-// Get media information from a specific player
 fn get_media_info(conn: &Connection, player: &str) -> Result<Option<MediaInfo>, Box<dyn Error>> {
     let proxy = conn.with_proxy(
         format!("org.mpris.MediaPlayer2.{}", player),
@@ -120,7 +116,6 @@ fn get_media_info(conn: &Connection, player: &str) -> Result<Option<MediaInfo>, 
         Duration::from_millis(500),
     );
 
-    // Try to get metadata and playback status
     let metadata_result: Result<PropMap, dbus::Error> = proxy.get(MEDIA_PLAYER_INTERFACE, "Metadata");
     let status_result: Result<String, dbus::Error> = proxy.get(MEDIA_PLAYER_INTERFACE, "PlaybackStatus");
 
