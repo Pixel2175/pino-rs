@@ -1,5 +1,5 @@
 use fltk::{
-    app::{self,get_font_names},
+    app::{self, get_font_names},
     draw,
     enums::{Align, Color, Event, Font},
     frame::Frame,
@@ -7,9 +7,13 @@ use fltk::{
     window::Window,
 };
 use std::{
-    fs::{self, metadata}, sync::mpsc, thread, time::{Duration, Instant}
+    io::Read,
+    os::unix::net::UnixListener,
+    path::Path,
+    sync::mpsc,
+    thread,
+    time::{Duration, Instant},
 };
-
 
 pub fn print_fonts() {
     for font in get_font_names() {
@@ -21,9 +25,10 @@ pub fn ui(
     screen_info: (i32, i32, i32, i32),
     font_family: String,
     border: (i32, i32),
-    title: (i32,i32,i32),
-    message: (i32,i32,i32),
+    title: (i32, i32, i32),
+    message: (i32, i32, i32),
     colors: (String, String, String, String),
+    data: (String, String, u64),
 ) {
     let app = app::App::default().load_system_fonts();
 
@@ -34,7 +39,6 @@ pub fn ui(
         screen_info.3,
         "Pino",
     );
-
     wind1.set_color(Color::from_hex_str(colors.1.as_str()).unwrap());
 
     let mut wind2 = Window::new(
@@ -46,25 +50,40 @@ pub fn ui(
     );
     wind2.set_color(Color::from_hex_str(colors.0.as_str()).unwrap());
 
-    let mut title_frame =   Frame::new(5 + title.0, 20 + title.1, wind2.w() - 10, wind2.h()-10, "");
-    let mut message_frame = Frame::new(5 + message.0, 20 + message.1, wind2.w() - 10, wind2.h()-10, "");
+    let mut title_frame = Frame::new(
+        5 + title.0,
+        20 + title.1,
+        wind2.w() - 10,
+        wind2.h() - 10,
+        "",
+    );
+    let mut message_frame = Frame::new(
+        5 + message.0,
+        20 + message.1,
+        wind2.w() - 10,
+        wind2.h() - 10,
+        "",
+    );
 
     title_frame.set_align(Align::Top | Align::Left);
     title_frame.set_label_color(Color::from_hex_str(colors.2.as_str()).unwrap());
     title_frame.set_label_font(Font::by_name(font_family.as_str()));
     title_frame.set_label_size(title.2);
 
-
     message_frame.set_align(Align::Top | Align::Left);
     message_frame.set_label_color(Color::from_hex_str(colors.3.as_str()).unwrap());
     message_frame.set_label_font(Font::by_name(font_family.as_str()));
     message_frame.set_label_size(message.2);
 
-
-
     wind1.draw(move |f| {
         draw::set_draw_color(Color::from_hex_str(colors.0.as_str()).unwrap());
-        draw::draw_rounded_rectf(border.0 - 1, border.0 -1 , f.w() - border.0 *2 +2, f.h() - border.0 * 2 +2, border.1);
+        draw::draw_rounded_rectf(
+            border.0 - 1,
+            border.0 - 1,
+            f.w() - border.0 * 2 + 2,
+            f.h() - border.0 * 2 + 2,
+            border.1,
+        );
     });
 
     wind1.handle(|_, event| {
@@ -76,40 +95,53 @@ pub fn ui(
         }
     });
 
-    let (tx, rx) = mpsc::channel::<(String, String, Option<u64>)>();
+    let (tx, rx) = mpsc::channel::<(String, String, u64)>();
+    tx.send((data.0, data.1, data.2))
+        .unwrap();
+    let socket_path = "/tmp/pino-check.sock";
+
+    if Path::new(socket_path).exists() {
+        std::fs::remove_file(socket_path).unwrap();
+    }
+
     thread::spawn(move || {
-        let filename = "/tmp/pino-check";
+        let listener = UnixListener::bind(socket_path).unwrap();
 
-        let (mut current_title,mut current_message,mut current_delay) = (String::new(),String::new(),None);
-        let mut modified = metadata(filename).unwrap().modified().unwrap();
-        let mut batata = true; 
+        for stream in listener.incoming() {
+            match stream {
+                Ok(mut stream) => {
+                    let mut buffer = [0; 1024];
+                    let n = stream.read(&mut buffer).unwrap();
+                    let received = String::from_utf8_lossy(&buffer[..n]).to_string();
 
-        loop {
-            if modified != metadata(filename).unwrap().modified().unwrap() || batata{
-                batata = false;
-                modified = metadata(filename).unwrap().modified().unwrap(); 
-
-                let content = fs::read_to_string(filename).unwrap();
-                let lines: Vec<&str> = content.lines().collect();
-                let new_title = lines.first().unwrap_or(&"").to_string();
-                let new_message = lines.get(1).unwrap_or(&"").to_string();
-                let new_delay = lines.get(2).and_then(|s| s.parse::<u64>().ok());
-                if new_title != current_title || new_message != current_message || new_delay != current_delay {
-                    tx.send((new_title.clone(), new_message.clone(), new_delay)).unwrap();
-                    current_title = new_title;
-                    current_message = new_message;
-                    current_delay = new_delay;
+                    let parts: Vec<String> = received
+                        .split("|+|")
+                        .map(|item| item.replace('\n', ""))
+                        .collect();
+                    if parts.len() >= 3 {
+                        let title = parts[0].to_string();
+                        let message = parts[1].to_string();
+                        let delay = parts[2].parse::<u64>().unwrap_or_else(|_| {
+                            eprintln!("Invalid delay value, using 3s");
+                            3
+                        });
+                        tx.send((title, message, delay)).unwrap();
+                    }
                 }
-            };
-            thread::sleep(Duration::from_millis(600));
+                Err(e) => {
+                    eprintln!("Error accepting connection: {}", e);
+                    break;
+                }
+            }
         }
     });
 
-    let mut close_timer: Option<Instant> = None;
-    let mut current_delay_secs: Option<u64> = None;
-
     wind1.set_override();
     wind1.show();
+    wind2.show();
+
+    let mut close_timer: Option<Instant> = None;
+    let mut current_delay_secs: Option<u64> = None;
 
     while app.wait() {
         if let Ok((title, message, delay)) = rx.try_recv() {
@@ -121,9 +153,9 @@ pub fn ui(
             }
             wind2.redraw();
 
-            if delay != current_delay_secs {
-                current_delay_secs = delay;
-                close_timer = delay.map(|secs| Instant::now() + Duration::from_secs(secs));
+            if current_delay_secs.map(|d| d != delay).unwrap_or(true) {
+                current_delay_secs = Some(delay);
+                close_timer = Some(Instant::now() + Duration::from_secs(delay));
             }
         }
 
@@ -134,6 +166,7 @@ pub fn ui(
             }
         }
     }
+    if Path::new(socket_path).exists() {
+        std::fs::remove_file(socket_path).unwrap();
+    }
 }
-
-

@@ -1,13 +1,13 @@
-use std::{path::PathBuf,fs::{create_dir_all,OpenOptions},io::Write};
+use std::{
+    fs::{OpenOptions, create_dir_all},
+    io::Write,
+    path::PathBuf,
+};
 
+pub fn generate_config(config_path: PathBuf) {
+    let config = config_path.join("pino").join("config.toml");
 
-pub fn generate_config(config_path: PathBuf){
-    let config = config_path
-        .join("pino")
-        .join("config.toml");
-
-    create_dir_all(config.parent().unwrap())
-        .expect("Failed to create directories for template");
+    create_dir_all(config.parent().unwrap()).expect("Failed to create directories for template");
     println!("Creating config file at: {}", config.display());
     let mut template = OpenOptions::new()
         .write(true)
@@ -65,9 +65,7 @@ border_color      = \"color1\"
 title_color       = \"fg\"
 message_color     = \"color8\"
 
-")
+",
+        )
         .expect("Can't Create Template File !!!");
 }
-
-
-

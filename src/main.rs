@@ -1,51 +1,53 @@
-use serde::Deserialize;
-use std::{fs::{self, File}, io::Write};
 use argh::FromArgs;
-use utils::is_running;
+use serde::Deserialize;
+use std::{fs, io::Write, os::unix::net::UnixStream, path::Path};
 
-
-mod utils;
 mod colors;
 mod config;
 mod screen;
 mod ui;
 
-
-// Get Args
 #[derive(FromArgs)]
-
-#[argh(description = "This tool lets you display notification with customizable options. you can also use a configuration file to set theme
-and everything easily (conf path = ~/.config/pino)")]
+#[argh(
+    description = "This tool lets you display notification with customizable options. you can also use a configuration file to set theme
+and everything easily (conf path = ~/.config/pino)"
+)]
 struct Arg {
+    #[argh(
+        option,
+        short = 't',
+        description = "set the notification title content"
+    )]
+    title: Option<String>,
 
-    #[argh(option,short = 't', description = "set the notification title content")]
-    title:Option<String> ,
+    #[argh(
+        option,
+        short = 'm',
+        description = "set the notification message content"
+    )]
+    message: Option<String>,
 
-    #[argh(option,short = 'm', description = "set the notification message content")]
-    message:Option<String>,
+    #[argh(
+        option,
+        short = 'd',
+        description = "set the delay before program closes with secends"
+    )]
+    delay: Option<u64>,
 
+    #[argh(
+        switch,
+        short = 'f',
+        description = "print all the fonts that you can use it"
+    )]
+    font: bool,
 
-    #[argh(option,short = 'd', description = "set the delay before program closes with secends")]
-    delay:Option<i32> ,
+    #[argh(option, short = 'c', description = "set a custom configuration file")]
+    config: Option<String>,
 
-    #[argh(switch,short = 'f', description = "print all the fonts that you can use it")]
-    font:bool ,
-
-    #[argh(option,short = 'c', description = "set a custom configuration file")]
-    config:Option<String> ,
-
-
-    #[argh(switch,short = 'v', description = "set a custom configuration file")]
-    version:bool ,
+    #[argh(switch, short = 'v', description = "set a custom configuration file")]
+    version: bool,
 }
 
-
-
-
-
-
-
-// Read the Config File
 #[derive(Debug, Deserialize)]
 struct Config {
     screen: Screen,
@@ -65,7 +67,7 @@ struct Screen {
     y: i32,
     width: i32,
     height: i32,
-    delay: i32,
+    delay: u64,
 }
 #[derive(Debug, Deserialize)]
 struct Frame {
@@ -101,22 +103,19 @@ struct Pywal {
     message_color: String,
 }
 
-
-
 fn main() {
     let config_folder = colors::get_config_dir();
-    let args:Arg = argh::from_env();
+    let args: Arg = argh::from_env();
 
     if args.version {
-        println!("v1.1.1");
-        return ;
+        println!("v1.1.2");
+        return;
     }
 
-    if args.font{
+    if args.font {
         ui::print_fonts();
-        return ;
+        return;
     }
-
 
     let config_file = match args.config {
         Some(path) => path,
@@ -124,30 +123,38 @@ fn main() {
             if !config_folder.join("pino").exists() {
                 config::generate_config(config_folder.clone());
             }
-            config_folder.join("pino").join("config.toml").to_string_lossy().into_owned()
+            config_folder
+                .join("pino")
+                .join("config.toml")
+                .to_string_lossy()
+                .into_owned()
         }
     };
 
     let config_content = fs::read_to_string(config_file).expect("Faild ");
     let config: Config = toml::from_str(&config_content).expect("Faild");
 
-
-
-    let mut pino_check = File::create("/tmp/pino-check").unwrap();
-
-    writeln!(pino_check ,"{}",args.title.unwrap_or("Title".to_string())).unwrap();
-    writeln!(pino_check ,"{}",args.message.unwrap_or("you didn't set the title or message".to_string())).unwrap();
-    writeln!(pino_check ,"{}",args.delay.unwrap_or(config.screen.delay)).unwrap();
-
-
-    if !is_running("pino"){
-
+    if Path::new("/tmp/pino-check.sock").exists() {
+        let mut stream = UnixStream::connect("/tmp/pino-check.sock").unwrap();
+        stream
+            .write_all(
+                format!(
+                    "{}|+|{}|+|{}",
+                    args.title.unwrap_or("Title".to_string()),
+                    args.message
+                        .unwrap_or("you didn't set the title or message".to_string()),
+                    args.delay.unwrap_or(config.screen.delay)
+                )
+                .as_bytes(),
+            )
+            .unwrap()
+    } else {
         let colors = match config.pywal.pywal {
             true => colors::pywal(
                 config.pywal.background_color.to_string(),
                 config.pywal.border_color.to_string(),
                 config.pywal.title_color.to_string(),
-                config.pywal.message_color.to_string()
+                config.pywal.message_color.to_string(),
             ),
             false => (
                 config.frame.fg_color,
@@ -155,10 +162,8 @@ fn main() {
                 config.title.color,
                 config.message.color,
             ),
-
         };
 
-        // Get Screen Placment
         let screen = screen::get_size(
             config.screen.monitor,
             config.screen.vertical.as_str(),
@@ -169,25 +174,19 @@ fn main() {
             config.screen.height,
         );
 
-        //UI
         ui::ui(
-            screen,config.frame.font_family,
+            screen,
+            config.frame.font_family,
+            (config.border.weight, config.border.radius),
+            (config.title.x, config.title.y, config.title.font_size),
+            (config.message.x, config.message.y, config.message.font_size),
+            colors,
             (
-                config.border.weight,
-                config.border.radius,
+                args.title.unwrap_or("Title".to_string()),
+                args.message
+                    .unwrap_or("you didn't set the title or message".to_string()),
+                args.delay.unwrap_or(config.screen.delay),
             ),
-            (
-                config.title.x,
-                config.title.y,
-                config.title.font_size,
-            ),
-            (
-                config.message.x,
-                config.message.y,
-                config.message.font_size,
-            ),colors
         );
     }
 }
-
-

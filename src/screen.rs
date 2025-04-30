@@ -17,7 +17,7 @@ pub fn get_size(
 
     if h.to_lowercase() == "left" {
         if v.to_lowercase() == "top" {
-            return (screens[monitor].0 + ax, ay + screens[monitor].1 , aw , ah);
+            return (screens[monitor].0 + ax, ay + screens[monitor].1, aw, ah);
         } else if v.to_lowercase() == "bottom" {
             return (
                 screens[monitor].0 + ax,

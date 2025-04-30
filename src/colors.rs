@@ -12,7 +12,7 @@ pub fn get_config_dir() -> PathBuf {
     panic!("Could not determine config directory");
 }
 
-fn create_template(app:&str) {
+fn create_template(app: &str) {
     let config = get_config_dir()
         .join(app)
         .join("templates")
@@ -105,19 +105,22 @@ pub fn pywal(
     border_color: String,
     title_color: String,
     message_color: String,
-) ->(String,String,String,String) {
+) -> (String, String, String, String) {
     let home = env::var("HOME").expect("Can't Find Home Dir");
 
-    if !get_config_dir().join("wal/templates/colors-pino.toml").exists(){
+    if !get_config_dir()
+        .join("wal/templates/colors-pino.toml")
+        .exists()
+    {
         create_template("wal");
     }
 
-
-
-    if !get_config_dir().join("walrs/templates/colors-pino.toml").exists(){
+    if !get_config_dir()
+        .join("walrs/templates/colors-pino.toml")
+        .exists()
+    {
         create_template("walrs");
     }
-
 
     let cache_colors = PathBuf::from(home)
         .join(".cache")
@@ -125,7 +128,7 @@ pub fn pywal(
         .join("colors-pino.toml");
     let content = fs::read_to_string(&cache_colors).expect("Can't Read Colors File!!!");
     let colors: Pywal = toml::from_str(&content).expect("Invalid TOML Format!!!");
-     (
+    (
         get_color(&colors, background_color.as_str()).to_string(),
         get_color(&colors, border_color.as_str()).to_string(),
         get_color(&colors, title_color.as_str()).to_string(),
