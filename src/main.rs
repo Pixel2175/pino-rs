@@ -2,12 +2,10 @@ use argh::FromArgs;
 use fltk::app::screen_xywh;
 use serde::Deserialize;
 use std::{fs, io::Write, os::unix::net::UnixStream, path::Path};
-use utils::is_running;
 
 mod colors;
 mod config;
 mod ui;
-mod utils;
 
 #[derive(FromArgs)]
 #[argh(
@@ -135,8 +133,8 @@ fn main() {
     let config_content = fs::read_to_string(config_file).expect("Faild ");
     let config: Config = toml::from_str(&config_content).expect("Faild");
 
-    if Path::new("/tmp/pino-check.sock").exists() && is_running() {
-        let mut stream = UnixStream::connect("/tmp/pino-check.sock").unwrap();
+
+    if let Ok(mut stream) = UnixStream::connect("/tmp/pino-check.sock") {
         stream
             .write_all(
                 format!(
