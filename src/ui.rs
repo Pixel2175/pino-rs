@@ -96,8 +96,7 @@ pub fn ui(
     });
 
     let (tx, rx) = mpsc::channel::<(String, String, u64)>();
-    tx.send((data.0, data.1, data.2))
-        .unwrap();
+    tx.send((data.0, data.1, data.2)).unwrap();
     let socket_path = "/tmp/pino-check.sock";
 
     if Path::new(socket_path).exists() {

@@ -1,11 +1,13 @@
 use argh::FromArgs;
 use serde::Deserialize;
 use std::{fs, io::Write, os::unix::net::UnixStream, path::Path};
+use utils::is_running;
 
 mod colors;
 mod config;
 mod screen;
 mod ui;
+mod utils;
 
 #[derive(FromArgs)]
 #[argh(
@@ -108,7 +110,7 @@ fn main() {
     let args: Arg = argh::from_env();
 
     if args.version {
-        println!("v1.1.2");
+        println!("v1.1.3");
         return;
     }
 
@@ -134,7 +136,7 @@ fn main() {
     let config_content = fs::read_to_string(config_file).expect("Faild ");
     let config: Config = toml::from_str(&config_content).expect("Faild");
 
-    if Path::new("/tmp/pino-check.sock").exists() {
+    if Path::new("/tmp/pino-check.sock").exists() && is_running() {
         let mut stream = UnixStream::connect("/tmp/pino-check.sock").unwrap();
         stream
             .write_all(
