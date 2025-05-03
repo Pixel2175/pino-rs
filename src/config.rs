@@ -21,9 +21,11 @@ pub fn generate_config(config_path: PathBuf) {
             b"[screen]
 monitor = 0 # Set the monitor using index
 
+# Placment: 
+#   top_left  |   top_center  |  top_right
+# bottom_left | bottom_center | bottom_right
 
-horizontal = \"left\"   #[right] |  [left]
-vertical = \"top\"      # [top]  | [bottom]
+placement = \"top_left\"
 x = 25                  # X access palcement
 y = 55                  # Y access palcement
 

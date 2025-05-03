@@ -1,11 +1,11 @@
 use argh::FromArgs;
+use fltk::app::screen_xywh;
 use serde::Deserialize;
 use std::{fs, io::Write, os::unix::net::UnixStream, path::Path};
 use utils::is_running;
 
 mod colors;
 mod config;
-mod screen;
 mod ui;
 mod utils;
 
@@ -62,9 +62,8 @@ struct Config {
 
 #[derive(Debug, Deserialize)]
 struct Screen {
-    monitor: usize,
-    horizontal: String,
-    vertical: String,
+    monitor: i32,
+    placement: String,
     x: i32,
     y: i32,
     width: i32,
@@ -166,6 +165,7 @@ fn main() {
             ),
         };
 
+        /*
         let screen = screen::get_size(
             config.screen.monitor,
             config.screen.vertical.as_str(),
@@ -175,9 +175,19 @@ fn main() {
             config.screen.width,
             config.screen.height,
         );
-
+*/
+        let (sx, sy, sw, sh) = screen_xywh(config.screen.monitor);
+        let screen = match config.screen.placement.as_str() {
+            "top_left"       => (sx + config.screen.x, sy + config.screen.y),
+            "top_center"     => (sx + (sw - config.screen.width) / 2, sy + config.screen.y),
+            "top_right"      => (sx + sw - config.screen.width - config.screen.x, sy + config.screen.y),
+            "bottom_left"    => (sx + config.screen.x, sy + sh - config.screen.height - config.screen.y),
+            "bottom_center"  => (sx + (sw - config.screen.width) / 2, sy + sh - config.screen.height - config.screen.y),
+            "bottom_right"   => (sx + sw - config.screen.width - config.screen.x, sy + sh - config.screen.height - config.screen.y),
+            _                => (20, 30),
+        };
         ui::ui(
-            screen,
+            (screen.0,screen.1,config.screen.width,config.screen.height),
             config.frame.font_family,
             (config.border.weight, config.border.radius),
             (config.title.x, config.title.y, config.title.font_size),
