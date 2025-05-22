@@ -29,6 +29,7 @@ pub fn ui(
     message: (i32, i32, i32),
     colors: (String, String, String, String),
     data: (String, String, u64),
+    socket_path: String,
 ) {
     let app = app::App::default().load_system_fonts();
 
@@ -97,14 +98,14 @@ pub fn ui(
 
     let (tx, rx) = mpsc::channel::<(String, String, u64)>();
     tx.send((data.0, data.1, data.2)).unwrap();
-    let socket_path = "/tmp/pino-check.sock";
 
-    if Path::new(socket_path).exists() {
-        std::fs::remove_file(socket_path).unwrap();
+    if Path::new(&socket_path).exists() {
+        std::fs::remove_file(&socket_path).unwrap();
     }
 
+    let socket = socket_path.clone();
     thread::spawn(move || {
-        let listener = UnixListener::bind(socket_path).unwrap();
+        let listener = UnixListener::bind(&socket).unwrap();
 
         for stream in listener.incoming() {
             match stream {
@@ -165,7 +166,7 @@ pub fn ui(
             }
         }
     }
-    if Path::new(socket_path).exists() {
+    if Path::new(&socket_path).exists() {
         std::fs::remove_file(socket_path).unwrap();
     }
 }

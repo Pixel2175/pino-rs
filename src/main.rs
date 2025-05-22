@@ -1,7 +1,7 @@
 use argh::FromArgs;
 use fltk::app::screen_xywh;
 use serde::Deserialize;
-use std::{fs, io::Write, os::unix::net::UnixStream, path::Path};
+use std::{fs, io::Write, os::unix::net::UnixStream};
 
 mod colors;
 mod config;
@@ -35,6 +35,13 @@ struct Arg {
     delay: Option<u64>,
 
     #[argh(
+        option,
+        short = 's',
+        description = "choice a name for new session by a special number (default = 0)"
+    )]
+    session: Option<u8>,
+
+    #[argh(
         switch,
         short = 'f',
         description = "print all the fonts that you can use it"
@@ -60,46 +67,46 @@ struct Config {
 
 #[derive(Debug, Deserialize)]
 struct Screen {
-    monitor: i32,
-    placement: String,
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
-    delay: u64,
+    monitor: Option<i32>,
+    placement: Option<String>,
+    x: Option<i32>,
+    y: Option<i32>,
+    width: Option<i32>,
+    height: Option<i32>,
+    delay: Option<u64>,
 }
 #[derive(Debug, Deserialize)]
 struct Frame {
-    fg_color: String,
-    font_family: String,
+    fg_color: Option<String>,
+    font_family: Option<String>,
 }
 #[derive(Debug, Deserialize)]
 struct Border {
-    weight: i32,
-    color: String,
-    radius: i32,
+    weight: Option<i32>,
+    color: Option<String>,
+    radius: Option<i32>,
 }
 #[derive(Debug, Deserialize)]
 struct Title {
-    color: String,
-    font_size: i32,
-    x: i32,
-    y: i32,
+    color: Option<String>,
+    font_size: Option<i32>,
+    x: Option<i32>,
+    y: Option<i32>,
 }
 #[derive(Debug, Deserialize)]
 struct Message {
-    color: String,
-    font_size: i32,
-    x: i32,
-    y: i32,
+    color: Option<String>,
+    font_size: Option<i32>,
+    x: Option<i32>,
+    y: Option<i32>,
 }
 #[derive(Debug, Deserialize)]
 struct Pywal {
-    pywal: bool,
-    background_color: String,
-    border_color: String,
-    title_color: String,
-    message_color: String,
+    pywal: Option<bool>,
+    background_color: Option<String>,
+    border_color: Option<String>,
+    title_color: Option<String>,
+    message_color: Option<String>,
 }
 
 fn main() {
@@ -107,7 +114,7 @@ fn main() {
     let args: Arg = argh::from_env();
 
     if args.version {
-        println!("v1.1.3");
+        println!("v1.1.4");
         return;
     }
 
@@ -133,8 +140,8 @@ fn main() {
     let config_content = fs::read_to_string(config_file).expect("Faild ");
     let config: Config = toml::from_str(&config_content).expect("Faild");
 
-
-    if let Ok(mut stream) = UnixStream::connect("/tmp/pino-check.sock") {
+    let socket = format!("/tmp/pino-check-{}.sock", args.session.unwrap_or(0));
+    if let Ok(mut stream) = UnixStream::connect(&socket) {
         stream
             .write_all(
                 format!(
@@ -142,61 +149,100 @@ fn main() {
                     args.title.unwrap_or("Title".to_string()),
                     args.message
                         .unwrap_or("you didn't set the title or message".to_string()),
-                    args.delay.unwrap_or(config.screen.delay)
+                    args.delay.unwrap_or(config.screen.delay.unwrap_or(3))
                 )
                 .as_bytes(),
             )
             .unwrap()
     } else {
-        let colors = match config.pywal.pywal {
-            true => colors::pywal(
-                config.pywal.background_color.to_string(),
-                config.pywal.border_color.to_string(),
-                config.pywal.title_color.to_string(),
-                config.pywal.message_color.to_string(),
-            ),
-            false => (
-                config.frame.fg_color,
-                config.border.color,
-                config.title.color,
-                config.message.color,
-            ),
+        let fallback = (
+            config
+                .frame
+                .fg_color
+                .clone()
+                .unwrap_or("#000000".to_string()),
+            config.border.color.clone().unwrap_or("#62777d".to_string()),
+            config.title.color.clone().unwrap_or("#b8b8b8".to_string()),
+            config
+                .message
+                .color
+                .clone()
+                .unwrap_or("#501701".to_string()),
+        );
+
+        let colors = if config.pywal.pywal.unwrap_or(false) {
+            colors::pywal(
+                config
+                    .pywal
+                    .background_color
+                    .clone()
+                    .unwrap_or_else(|| fallback.0.clone()),
+                config
+                    .pywal
+                    .border_color
+                    .clone()
+                    .unwrap_or_else(|| fallback.1.clone()),
+                config
+                    .pywal
+                    .title_color
+                    .clone()
+                    .unwrap_or_else(|| fallback.2.clone()),
+                config
+                    .pywal
+                    .message_color
+                    .clone()
+                    .unwrap_or_else(|| fallback.3.clone()),
+            )
+        } else {
+            fallback
         };
 
-        /*
-        let screen = screen::get_size(
-            config.screen.monitor,
-            config.screen.vertical.as_str(),
-            config.screen.horizontal.as_str(),
-            config.screen.x,
-            config.screen.y,
-            config.screen.width,
-            config.screen.height,
+        let (sx, sy, sw, sh) = screen_xywh(config.screen.monitor.unwrap_or(0));
+        let (ax, ay, aw, ah) = (
+            config.screen.x.unwrap_or(25),
+            config.screen.y.unwrap_or(55),
+            config.screen.width.unwrap_or(400),
+            config.screen.height.unwrap_or(60),
         );
-*/
-        let (sx, sy, sw, sh) = screen_xywh(config.screen.monitor);
-        let screen = match config.screen.placement.as_str() {
-            "top_left"       => (sx + config.screen.x, sy + config.screen.y),
-            "top_center"     => (sx + (sw - config.screen.width) / 2, sy + config.screen.y),
-            "top_right"      => (sx + sw - config.screen.width - config.screen.x, sy + config.screen.y),
-            "bottom_left"    => (sx + config.screen.x, sy + sh - config.screen.height - config.screen.y),
-            "bottom_center"  => (sx + (sw - config.screen.width) / 2, sy + sh - config.screen.height - config.screen.y),
-            "bottom_right"   => (sx + sw - config.screen.width - config.screen.x, sy + sh - config.screen.height - config.screen.y),
-            _                => (20, 30),
+        let screen = match config
+            .screen
+            .placement
+            .unwrap_or("top_center".to_string())
+            .as_str()
+        {
+            "top_left" => (sx + ax, sy + ay),
+            "top_center" => (sx + (sw - aw) / 2, sy + ay),
+            "top_right" => (sx + sw - aw - ax, sy + ay),
+            "bottom_left" => (sx + ax, sy + sh - ah - ay),
+            "bottom_center" => (sx + (sw - aw) / 2, sy + sh - ah - ay),
+            "bottom_right" => (sx + sw - aw - ax, sy + sh - ah - ay),
+            _ => (20, 30),
         };
         ui::ui(
-            (screen.0,screen.1,config.screen.width,config.screen.height),
-            config.frame.font_family,
-            (config.border.weight, config.border.radius),
-            (config.title.x, config.title.y, config.title.font_size),
-            (config.message.x, config.message.y, config.message.font_size),
+            (screen.0, screen.1, aw, ah),
+            config.frame.font_family.unwrap_or("Monospace".to_string()),
+            (
+                config.border.weight.unwrap_or(2),
+                config.border.radius.unwrap_or(10),
+            ),
+            (
+                config.title.x.unwrap_or(5),
+                config.title.y.unwrap_or(0),
+                config.title.font_size.unwrap_or(17),
+            ),
+            (
+                config.message.x.unwrap_or(10),
+                config.message.y.unwrap_or(19),
+                config.message.font_size.unwrap_or(13),
+            ),
             colors,
             (
                 args.title.unwrap_or("Title".to_string()),
                 args.message
                     .unwrap_or("you didn't set the title or message".to_string()),
-                args.delay.unwrap_or(config.screen.delay),
+                args.delay.unwrap_or(config.screen.delay.unwrap_or(5)),
             ),
+            socket,
         );
     }
 }
